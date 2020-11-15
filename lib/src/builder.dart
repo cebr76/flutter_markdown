@@ -314,12 +314,19 @@ class MarkdownBuilder implements md.NodeVisitor {
             element.children.add(md.Text(''));
           }
           Widget bullet;
+          double padding;
           dynamic el = element.children[0];
+          if(el is md.Element){
+            padding = double.tryParse(el.attributes['padding']);
+            if(padding == null){
+              padding = 4.0;
+            }
+          }
           if (el is md.Element && el.attributes['type'] == 'checkbox') {
             bool val = el.attributes['checked'] != 'false';
-            bullet = _buildCheckbox(val);
+            bullet = _buildCheckbox(val, padding);
           } else {
-            bullet = _buildBullet(_listIndents.last);
+            bullet = _buildBullet(_listIndents.last, padding);
           }
           // See #147 and #169
           child = Row(
@@ -444,12 +451,13 @@ class MarkdownBuilder implements md.NodeVisitor {
     }
   }
 
-  Widget _buildCheckbox(bool checked) {
+  Widget _buildCheckbox(bool checked, double padding) {
+    final edgeInsets = EdgeInsets.only(right: padding);
     if (checkboxBuilder != null) {
       return checkboxBuilder(checked);
     }
     return Padding(
-      padding: const EdgeInsets.only(right: 4),
+      padding: edgeInsets,
       child: Icon(
         checked ? Icons.check_box : Icons.check_box_outline_blank,
         size: styleSheet.checkbox.fontSize,
@@ -458,7 +466,8 @@ class MarkdownBuilder implements md.NodeVisitor {
     );
   }
 
-  Widget _buildBullet(String listTag) {
+  Widget _buildBullet(String listTag, padding) {
+    final edgeInsets = EdgeInsets.only(right: padding);
     if (listTag == 'ul') {
       return Text(
         '•',
@@ -469,7 +478,7 @@ class MarkdownBuilder implements md.NodeVisitor {
 
     final int index = _blocks.last.nextListIndex;
     return Padding(
-      padding: const EdgeInsets.only(right: 4),
+      padding: edgeInsets,
       child: Text(
         '${index + 1}.',
         textAlign: TextAlign.right,
