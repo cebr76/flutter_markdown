@@ -314,19 +314,25 @@ class MarkdownBuilder implements md.NodeVisitor {
             element.children.add(md.Text(''));
           }
           Widget bullet;
-          double padding;
           dynamic el = element.children[0];
-          if(el is md.Element){
-            padding = double.tryParse(el.attributes['padding']);
-            if(padding == null){
-              padding = 4.0;
-            }
-          }
+          bool hasPadding = el is md.Element &&
+              el.attributes.keys.contains('padding') &&
+              double.tryParse(el.attributes['padding']) != null;
           if (el is md.Element && el.attributes['type'] == 'checkbox') {
             bool val = el.attributes['checked'] != 'false';
-            bullet = _buildCheckbox(val, padding);
+            if(hasPadding){
+              double padding = double.tryParse(el.attributes['padding']);
+              bullet = _buildCheckbox(val, padding: padding);
+            } else {
+              bullet = _buildCheckbox(val);
+            }
           } else {
-            bullet = _buildBullet(_listIndents.last, padding);
+            if(hasPadding){
+              double padding = double.tryParse(el.attributes['padding']);
+              bullet = _buildBullet(_listIndents.last, padding: padding);
+            } else {
+              bullet = _buildBullet(_listIndents.last, padding: 5.0);
+            }
           }
           // See #147 and #169
           child = Row(
@@ -451,7 +457,7 @@ class MarkdownBuilder implements md.NodeVisitor {
     }
   }
 
-  Widget _buildCheckbox(bool checked, double padding) {
+  Widget _buildCheckbox(bool checked, {double padding = 4.0}) {
     final edgeInsets = EdgeInsets.only(right: padding);
     if (checkboxBuilder != null) {
       return checkboxBuilder(checked);
@@ -466,7 +472,7 @@ class MarkdownBuilder implements md.NodeVisitor {
     );
   }
 
-  Widget _buildBullet(String listTag, padding) {
+  Widget _buildBullet(String listTag, {double padding = 4.0}) {
     final edgeInsets = EdgeInsets.only(right: padding);
     if (listTag == 'ul') {
       return Text(
